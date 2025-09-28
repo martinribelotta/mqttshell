@@ -1,0 +1,40 @@
+name: Build and Release Binaries
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: registry.access.redhat.com/ubi8/ubi
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Install Rust
+        run: |
+          curl https://sh.rustup.rs -sSf | sh -s -- -y
+          source $HOME/.cargo/env
+      - name: Install build dependencies
+        run: |
+          yum -y update
+          yum -y install gcc make
+      - name: Build agent binary
+        run: |
+          source $HOME/.cargo/env
+          cargo build --release --package mqttshell-agent
+      - name: Build controller binary
+        run: |
+          source $HOME/.cargo/env
+          cargo build --release --package mqttshell-controller
+      - name: Upload agent binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: mqttshell-agent
+          path: target/release/mqttshell-agent
+      - name: Upload controller binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: mqttshell-controller
+          path: target/release/mqttshell-controller
